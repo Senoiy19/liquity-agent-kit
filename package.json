@@ -29,5 +29,13 @@
     "tsx": "^4.23.15",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Senoiy19/liquity-agent-kit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Senoiy19/liquity-agent-kit/issues"
+  },
+  "homepage": "https://github.com/Senoiy19/liquity-agent-kit#readme"
 }

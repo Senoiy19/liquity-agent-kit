@@ -251,9 +251,11 @@ export async function getTroveRedemptionPosition(
     rpc(`lastZombieTroveId for ${b}`, () => client.readContract({ address: manager, abi: troveManagerReadAbi, functionName: "lastZombieTroveId", blockNumber }))
   ]);
   const price = priceRead.data.price;
-  // Redemption skips Troves whose ICR (at the normal oracle price) is below 100% (TroveManager.redeemCollateral).
-  const belowParity = (coll: bigint, debt: bigint) => { const icr = collateralRatio(coll, price, debt); return icr !== null && icr < WAD; };
+  const priceUsable = price > 0n;
+  // Redemption skips Troves whose ICR (at the normal oracle price) is below 100% (TroveManager.redeemCollateral), including a pending zombie.
+  const belowParity = (coll: bigint, debt: bigint) => { if (!priceUsable) return false; const icr = collateralRatio(coll, price, debt); return icr !== null && icr < WAD; };
   const warnings: string[] = [...priceRead.warnings];
+  if (!priceUsable) warnings.push("Oracle price is zero, so the ICR < 100% filter could not be evaluated: belowParityDebtAhead is reported as 0 and redeemableDebtAhead equals debtAhead, which may overstate what redemptions can reach.");
   const contracts = [resolved.registry, resolved.getter, manager, ...priceRead.contracts];
 
   // A partially redeemed "zombie" Trove is removed from SortedTroves but is redeemed FIRST in the next redemption (lastZombieTroveId).
@@ -262,6 +264,7 @@ export async function getTroveRedemptionPosition(
     const z = await rpc(`pending zombie Trove ${zombieId}`, () => client.readContract({ address: manager, abi: troveManagerReadAbi, functionName: "getLatestTroveData", args: [zombieId], blockNumber }));
     if (zombieId === id) {
       warnings.push("This Trove is the branch's pending zombie Trove: it is removed from the sorted list but is redeemed before any listed Trove.");
+      if (belowParity(z.entireColl, z.entireDebt)) warnings.push("This pending zombie Trove has ICR below 100% at the current oracle price. Redemptions skip it (TroveManager.redeemCollateral applies the ICR check to the zombie too), so it is not redeemable until its ratio recovers; rank 1 is its queue position, not a guarantee it is reachable.");
       return {
         data: { branch: b, troveId: id, positionFound: true, rank: 1n, targetAnnualInterestRate: z.annualInterestRate, targetDebt: z.entireDebt, targetStatus: "zombie",
           pendingZombieTroveId: zombieId, pendingZombieDebt: 0n, trovesAhead: 0n, debtAhead: 0n, lowerRateDebtAhead: 0n, sameRateDebtAhead: 0n, belowParityDebtAhead: 0n, redeemableDebtAhead: 0n,

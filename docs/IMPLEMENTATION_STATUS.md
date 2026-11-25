@@ -17,13 +17,13 @@
 | Vitest unit + mock-RPC suite | all passing (`npm test`) |
 | Registry addresses vs upstream `frontend/app/.env` at the pinned commit | 32/32 match (frozen in `test/fixtures/upstream-manifest.json`) |
 | `MultiTroveGetter.getMultipleSortedTroves`, `CombinedTroveData`, `CollateralRegistry.totalCollaterals/getToken` vs upstream Solidity at the pinned commit | matched by reading source, including signed-index semantics (>=0 from head, <0 from tail) |
-| Live Ethereum RPC | **Not run** (`npm run smoke`) |
+| Live Ethereum mainnet RPC | `npm run smoke` passed (code at all 28 manifest addresses, BOLD token, branch parameters, oracle price, Stability Pool, sorted-list head/tail ordering, tail Trove rank 1 on WETH/wstETH/rETH). `npm run live:redemption` passed on all three branches (rank, debt ahead, rate split and redeemable debt cross-checked against an independent list walk at depths 0, 1 and 10 where the list was deep enough). Run 2026-11-24/25 by the maintainer against an Alchemy endpoint. |
 
 v0.3.0 as first delivered did not compile: `getWalletTroveDetails` was documented, registered as a tool and tested but not implemented, and one type was misnamed. v0.3.1 implements it and fixes the names; the 0.3.0 "not run" status above is superseded.
 
 ## Not verified
 
-- **Anything against a live Ethereum RPC.** `scripts/smoke.ts` is written to close this gap and has not been run.
+- **Live coverage is partial.** Not yet run against a live chain: `liquity_get_trove_health`, `liquity_get_wallet_troves` (log scan), `liquity_analyze_branch_interest_rates`, Stability Pool account deposits, and any state with a **pending zombie Trove** or a **Trove below 100% ICR ahead of the target** (neither existed on any branch when the live checks ran, so those code paths are verified against mocks only).
 - That deployed bytecode matches `main` at the pinned commit (the manifest, not the Solidity, was matched).
 - Behaviour of specific RPC providers (log-range limits, simulating `fetchPrice`).
 - `MultiTroveGetter.getMultipleSortedTroves` has a bounded page reader. Its ABI matches the upstream Solidity at the pinned commit; deployed-bytecode and live-call behaviour still need validation. `HintHelpers` and `ExchangeHelpers` remain registered but have no readers.
@@ -38,7 +38,7 @@ v0.3.0 as first delivered did not compile: `getWalletTroveDetails` was documente
 
 ## Release gate
 
-Do not tag a stable release or call capabilities production-ready until `npm run smoke` passes against a mainnet RPC, with at least one real Trove checked end-to-end through `liquity_get_trove_health` and one wallet through `liquity_get_wallet_troves`.
+Do not tag a stable release or call capabilities production-ready until `npm run smoke` passes against a mainnet RPC (**done**), with at least one real Trove checked end-to-end through `liquity_get_trove_health` and one wallet through `liquity_get_wallet_troves` (**not yet done**).
 
 
 ## v0.3.2 additions
@@ -66,7 +66,9 @@ v0.3.2 walked the list from the head and treated the Troves in front of the targ
 ### v0.3.5: MCP adapter and live redemption check
 
 - Added `src/mcp` (`npm run mcp`): a stdio MCP server over the shared tool definitions. It exposes only `read`/`compute` tools, annotates them read-only, lists RPC-needing tools only when `ETH_RPC_URL` is set, and returns validation errors as tool errors with the kit's stable codes. Verified with in-memory client tests and a real stdio round trip; not yet tried in MCP Inspector or an agent client.
-- Added `npm run live:redemption`: queries Troves at several depths from the tail on each branch and cross-checks rank, debt ahead, lower/same-rate split, below-100% debt and redeemable debt against an independent walk of the sorted list at one pinned block. **Not yet run against mainnet** (written without RPC access); run it and treat a failure as a real finding.
+- Added `npm run live:redemption`: queries Troves at several depths from the tail on each branch and cross-checks rank, debt ahead, lower/same-rate split, below-100% debt and redeemable debt against an independent walk of the sorted list at one pinned block. Run against mainnet and passed on all three branches; the pending-zombie and below-100%-ICR branches of the check were not triggered because no branch had either condition at the time.
+
+- Pre-submission audit fixes (no version bump): a pending-zombie **target** below 100% ICR now warns that redemptions skip it (upstream applies the ICR check to the zombie too); a **zero oracle price** no longer marks every Trove as below 100% ICR (the filter is skipped, `redeemableDebtAhead` equals `debtAhead`, and a warning says so); stale "not live-validated" claims in the README, roadmap and this file were corrected. Two new tests (109 total).
 
 ### v0.3.4: redemption rules and ABI drift check
 

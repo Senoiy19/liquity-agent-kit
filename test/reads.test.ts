@@ -231,6 +231,24 @@ describe("redemption position and interest-rate analysis", () => {
     const r = await getTroveRedemptionPosition(w.chain.client(), "WETH", 555n);
     expect(r.data).toMatchObject({ positionFound: true, rank: 1n, debtAhead: 0n, targetStatus: "zombie", positionComplete: true, targetDebt: 300n * E18 });
   });
+  it("warns when the pending zombie target is below 100% ICR, because redemptions skip it", async () => {
+    const w = makeWorld(); w.sortedTroves = descending();
+    addTrove(w, 555n, { status: 4, debt: 3000n * E18, recorded: 3000n * E18, coll: E18 }); w.lastZombieTroveId = 555n; // 1 ETH * $2000 vs 3000 BOLD => ~67% ICR
+    const r = await getTroveRedemptionPosition(w.chain.client(), "WETH", 555n);
+    expect(r.data).toMatchObject({ positionFound: true, rank: 1n, targetStatus: "zombie" });
+    expect(r.warnings.join(" ")).toMatch(/ICR below 100%[\s\S]*skip/);
+    const healthy = makeWorld(); healthy.sortedTroves = descending();
+    addTrove(healthy, 555n, { status: 4, debt: 300n * E18, recorded: 300n * E18, coll: 2n * E18 }); healthy.lastZombieTroveId = 555n;
+    expect((await getTroveRedemptionPosition(healthy.chain.client(), "WETH", 555n)).warnings.join(" ")).not.toMatch(/ICR below 100%/);
+  });
+  it("does not label Troves unredeemable when the oracle price is zero", async () => {
+    const w = makeWorld(); w.sortedTroves = descending(); w.price = 0n;
+    const r = await getTroveRedemptionPosition(w.chain.client(), "WETH", 202n);
+    expect(r.data.belowParityDebtAhead).toBe(0n);
+    expect(r.data.redeemableDebtAhead).toBe(r.data.debtAhead);
+    expect(r.warnings.join(" ")).toMatch(/Oracle price is zero/);
+    expect(r.warnings.join(" ")).not.toMatch(/belongs to Troves with ICR below 100%/);
+  });
   it("separates debt held by Troves below 100% ICR, which redemptions skip", async () => {
     const w = makeWorld();
     w.sortedTroves = [

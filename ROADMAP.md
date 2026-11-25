@@ -27,7 +27,8 @@
 - [x] Read branch parameters and oracle/price-feed state with fallback status.
 - [x] Read Stability Pool state and account deposits.
 - [x] Add deterministic health and simple-interest calculations.
-- [ ] **Live mainnet validation (`npm run smoke`) — release gate.**
+- [x] Live mainnet validation (`npm run smoke`, `npm run live:redemption`) passes.
+- [ ] **Release gate remainder:** live check of `liquity_get_trove_health` on a real Trove and `liquity_get_wallet_troves` on a real wallet.
 - [x] Bounded sorted-Trove pages via `MultiTroveGetter`, with collateral index resolved from the on-chain registry.
 - [ ] Debt-in-front and rate-distribution reads.
 

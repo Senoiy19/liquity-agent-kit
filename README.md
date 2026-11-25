@@ -45,7 +45,7 @@ A single package for now (`liquity-agent-kit`); the modules below are directorie
 
 | Capability | Status |
 |---|---|
-| Versioned deployment registry, pinned to an upstream commit | Done (address manifest cross-checked; not live-verified) |
+| Versioned deployment registry, pinned to an upstream commit | Done (manifest cross-checked against upstream; code confirmed at every address on mainnet) |
 | Shared vs branch contracts resolved separately | Done (`liquity_get_protocol_contracts`) |
 | BOLD token and branch parameters | Done |
 | Trove by ID, Trove health (ratio, liquidation price) | Done |
@@ -57,7 +57,7 @@ A single package for now (`liquity-agent-kit`); the modules below are directorie
 | JSON Schemas + executable tools | Done (`executeTool`, `schemas/capability-catalog.json`) |
 | MCP adapter | Done (`npm run mcp`; see below) |
 | Write planning | Not started |
-| Live mainnet validation | **Outstanding** — `npm run smoke` |
+| Live mainnet validation | **Partial** — `npm run smoke` and `npm run live:redemption` pass; Trove-health, wallet-Trove and interest-rate tools not yet run live |
 
 ### Running the MCP server
 
@@ -137,7 +137,7 @@ All integers cross the tool boundary as decimal strings. Inputs are validated ag
 ## Known limits
 
 - **ABIs are machine-checked against upstream source, not generated from it.** `npm run abi:extract -- <bold checkout>` parses the pinned `liquity/bold` Solidity into a signature fixture, and `test/abi-drift.test.ts` compares every function in the hand-written ABIs (types, tuple layout, mutability) to it. Regenerate the fixture whenever `sourceCommit` changes.
-- **Not live-validated.** The sandbox this was built in could not reach an Ethereum RPC. Tests use a mock JSON-RPC node (real viem encoding/decoding, so ABI shapes are exercised, but the mock encodes the same ABIs the code uses). ABIs were checked by hand against upstream Solidity interfaces; addresses were checked programmatically against the upstream manifest. Neither proves the contracts on-chain behave identically — `npm run smoke` does.
+- **Live validation is partial.** `npm run smoke` and `npm run live:redemption` pass against Ethereum mainnet (see `docs/IMPLEMENTATION_STATUS.md`). Not yet run live: Trove-health and wallet-Trove reads, the interest-rate analysis tool, and any state with a pending zombie Trove or a Trove below 100% ICR (those paths are verified against a mock JSON-RPC node only; the mock uses the same ABIs as the code, so ABI drift is guarded separately by `test/abi-drift.test.ts`, which compares against upstream Solidity at the pinned commit, not the deployed bytecode).
 - **Upstream `main` may be ahead of what is deployed.** The pinned commit is the manifest's source, not a guarantee of the deployed bytecode.
 - **Oracle price is a simulation.** `PriceFeed.fetchPrice` is state-changing upstream; the kit calls it with `eth_call` only. If your RPC provider rejects simulating it, the price tools fail rather than substituting another source.
 - **Sorted Trove pages are bounded.** `liquity_get_sorted_troves_page` reads at most 500 entries per call. It resolves the branch collateral index from the on-chain CollateralRegistry at the same pinned block. The contract-native signed index is returned; consumers should use `nextStartIndex` rather than guessing pagination semantics.
@@ -155,3 +155,8 @@ See `SOURCE_NOTES.md` for provenance.
 - Both scans are pinned to one block and bounded by `maxTroves` (default 10,000; maximum 100,000). Check `positionComplete` or `complete`; truncated results must not be presented as full-branch results.
 - Each page read walks the list inside one `eth_call`, so deep scans cost more gas per call; large `maxTroves` values may hit your provider's `eth_call` gas limit. This is untested live.
 - Debt ahead is branch-local and point-in-time. It is not a redemption prediction: actual redemption depends on cross-branch routing, redemption size and fee, branch status, eligibility and transaction-time state.
+
+## Known issues
+
+- `npm audit` reports 3 findings (1 moderate, 2 critical) in the **dev-only** test tooling (`vitest`, `@vitest/mocker`, `tinypool`). They do not ship in the library or the MCP server. The suggested fix is vitest 5, which requires Node 22.12 or newer, so it was not applied here (the kit supports Node 20.11+); an attempt to move to a 4.x release failed in this environment with an npm error and was not pursued further.
+- The redemption-position tools describe the **current branch queue only**. They do not model cross-branch routing, redemption fees or future state changes.
