@@ -1,0 +1,46 @@
+{
+ "_source": "liquity/bold contracts/src (parsed by scripts/extract-upstream-signatures.ts)",
+ "_commit": "d262669ef3c4d37bf0544df3bb2624c07b8a5ee0",
+ "groups": {
+  "troveManagerReadAbi": {
+   "getLatestTroveData": "getLatestTroveData(uint256)->((uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256))|view",
+   "lastZombieTroveId": "lastZombieTroveId()->(uint256)|view",
+   "getTroveStatus": "getTroveStatus(uint256)->(uint8)|view",
+   "getTroveAnnualInterestRate": "getTroveAnnualInterestRate(uint256)->(uint256)|view",
+   "Troves": "Troves(uint256)->(uint256,uint256,uint256,uint8,uint64,uint64,uint64,uint256,address,uint256)|view"
+  },
+  "borrowerOperationsReadAbi": {
+   "MCR": "MCR()->(uint256)|view",
+   "CCR": "CCR()->(uint256)|view",
+   "SCR": "SCR()->(uint256)|view",
+   "BCR": "BCR()->(uint256)|view",
+   "getEntireBranchDebt": "getEntireBranchDebt()->(uint256)|view",
+   "getEntireBranchColl": "getEntireBranchColl()->(uint256)|view",
+   "hasBeenShutDown": "hasBeenShutDown()->(bool)|view"
+  },
+  "priceFeedAbi": {
+   "fetchPrice": "fetchPrice()->(uint256,bool)|nonpayable",
+   "lastGoodPrice": "lastGoodPrice()->(uint256)|view",
+   "priceSource": "priceSource()->(uint8)|view"
+  },
+  "stabilityPoolReadAbi": {
+   "getTotalBoldDeposits": "getTotalBoldDeposits()->(uint256)|view",
+   "getCollBalance": "getCollBalance()->(uint256)|view",
+   "getYieldGainsOwed": "getYieldGainsOwed()->(uint256)|view",
+   "getYieldGainsPending": "getYieldGainsPending()->(uint256)|view",
+   "deposits": "deposits(address)->(uint256)|view",
+   "stashedColl": "stashedColl(address)->(uint256)|view",
+   "getDepositorCollGain": "getDepositorCollGain(address)->(uint256)|view",
+   "getDepositorYieldGain": "getDepositorYieldGain(address)->(uint256)|view",
+   "getDepositorYieldGainWithPending": "getDepositorYieldGainWithPending(address)->(uint256)|view",
+   "getCompoundedBoldDeposit": "getCompoundedBoldDeposit(address)->(uint256)|view"
+  },
+  "multiTroveGetterAbi": {
+   "getMultipleSortedTroves": "getMultipleSortedTroves(uint256,int256,uint256)->((uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,uint256,uint256,uint256)[])|view"
+  },
+  "collateralRegistryReadAbi": {
+   "totalCollaterals": "totalCollaterals()->(uint256)|view",
+   "getToken": "getToken(uint256)->(address)|view"
+  }
+ }
+}

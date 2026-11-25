@@ -1,0 +1,596 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Liquity Agent Kit capability catalog",
+  "description": "Generated from src/agent-tools/tools.ts. Every entry is implemented; do not edit by hand (npm run catalog).",
+  "version": "0.3.5",
+  "protocolScope": [
+    "Liquity V2"
+  ],
+  "initialNetwork": {
+    "name": "Ethereum Mainnet",
+    "chainId": 1
+  },
+  "upstreamSourceCommit": "d262669ef3c4d37bf0544df3bb2624c07b8a5ee0",
+  "conventions": {
+    "integers": "All token amounts, prices and block numbers are decimal strings of base-unit integers. Amounts and prices are scaled 1e18; ratios and rates use 1e18 = 100%.",
+    "results": "Read tools return { data, provenance, warnings }. Failures return { ok: false, error: { code, message } }.",
+    "sideEffects": "read = reads chain state; compute = local deterministic calculation or static data. No tool signs or sends transactions."
+  },
+  "capabilities": [
+    {
+      "name": "liquity_get_supported_deployments",
+      "group": "discovery",
+      "sideEffect": "compute",
+      "status": "implemented",
+      "requiresRpc": false,
+      "description": "List the Liquity deployments this kit supports (currently V2 on Ethereum mainnet) with the upstream source commit and per-address verification label. Use first to confirm network support. Static data; no RPC.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_protocol_contracts",
+      "group": "discovery",
+      "sideEffect": "compute",
+      "status": "implemented",
+      "requiresRpc": false,
+      "description": "Return shared contract addresses and the addresses of one branch's contracts (TroveManager, BorrowerOperations, StabilityPool, PriceFeed, ...). Shared and branch contracts are returned separately. Addresses are from the pinned repository manifest, not live-verified. Static data; no RPC.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          }
+        },
+        "required": [
+          "branch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_bold_token_info",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read BOLD token symbol, decimals and total supply (base units, 18 decimals) on Ethereum mainnet.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_trove",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read an open Liquity V2 Trove by branch and Trove ID. Returns owner, status, collateral and debt (1e18 base units), annual interest rate (1e18 = 100%), accrued interest and batch manager. Trove IDs are 256-bit hashes, not small sequential numbers: pass them as decimal strings.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "troveId": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Trove NFT ID. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "troveId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_trove_health",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read a Trove, its branch's protocol oracle price and MCR at ONE block, and derive collateral ratio (1e18 = 100%) and liquidation price (USD, 1e18). Price is the protocol oracle, not a market price. A ratio above MCR does not prove the position is safe.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "troveId": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Trove NFT ID. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "troveId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_branch_parameters",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read on-chain MCR, CCR, SCR, BCR (1e18 = 100%), total branch debt and collateral (1e18 base units) and shutdown status for a branch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_branch_price",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read the protocol oracle price for a branch's collateral (USD, 1e18) via an eth_call simulation of PriceFeed.fetchPrice, plus lastGoodPrice and price source. Warns when the feed is not on its primary oracle. Nothing is sent on-chain.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_stability_pool_state",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read a branch's Stability Pool totals: total BOLD deposits, collateral balance and yield gains owed/pending (1e18 base units).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_stability_pool_position",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read one address's Stability Pool position on a branch: compounded BOLD deposit, initial deposit, collateral gain, yield gain (with and without pending) and stashed collateral (1e18 base units).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "depositor": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$",
+            "description": "Depositor address (0x-prefixed, 20 bytes)."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "depositor"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_sorted_troves_page",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Read a bounded page from Liquity V2's on-chain sorted Trove list for a collateral branch using MultiTroveGetter. Returns Trove IDs, current aggregate debt/collateral, effective annual rate, accrued interest/fees and batch metadata at one pinned block. The startIndex is the contract's signed list index; continue with nextStartIndex when returned. List order is protocol state, not a prediction of redemption execution.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "startIndex": {
+            "type": "string",
+            "pattern": "^-?[0-9]+$",
+            "description": "Signed MultiTroveGetter start index. Signed decimal integer string; never a JSON number."
+          },
+          "count": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Number of Troves to return, 1–500. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "startIndex",
+          "count"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_wallet_troves",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Find open Troves owned by a wallet on one branch by scanning TroveNFT Transfer logs from fromBlock, then reconciling with current status, ownerOf and balanceOf. Check `complete`: false means the list may be missing Troves. Bounded by maxRequests; fails rather than truncating.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$",
+            "description": "Wallet address (0x-prefixed, 20 bytes)."
+          },
+          "fromBlock": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "First block to scan for transfers (at or before the branch deployment). Non-negative decimal integer string; never a JSON number."
+          },
+          "maxBlockRange": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional blocks per log request, default 10000. Non-negative decimal integer string; never a JSON number."
+          },
+          "maxRequests": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional cap on log requests, default 500. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "owner",
+          "fromBlock"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_wallet_trove_details",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Discover a wallet's open Troves on one branch and hydrate each with full Trove data (collateral, debt, recorded debt, effective annual rate, accrued interest, batch management fee, batch manager and batch debt shares). All reads use one pinned block. Requires fromBlock; check discoveryComplete and detailsComplete before treating the result as exhaustive. Hydration is capped at maxTroves (default 25, maximum 100).",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "owner": {
+            "type": "string",
+            "pattern": "^0x[0-9a-fA-F]{40}$",
+            "description": "Wallet address (0x-prefixed, 20 bytes)."
+          },
+          "fromBlock": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "First block to scan for transfers (at or before branch deployment). Non-negative decimal integer string; never a JSON number."
+          },
+          "maxBlockRange": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional blocks per log request. Non-negative decimal integer string; never a JSON number."
+          },
+          "maxRequests": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional cap on log requests. Non-negative decimal integer string; never a JSON number."
+          },
+          "maxTroves": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional maximum Troves to hydrate, 1–100. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "owner",
+          "fromBlock"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_get_trove_redemption_position",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Walk a branch's on-chain sorted Trove list from its tail (the end redeemed first: lowest interest rate) and calculate a Trove's branch-local redemption rank (1 = redeemed first) and the BOLD debt redeemed before it. Includes lower-rate Troves, same-rate Troves ordered nearer the tail, and the branch's pending partially-redeemed zombie Trove (redeemed first); higher-rate Troves are excluded. Debt held by Troves with ICR below 100% (skipped by redemptions) is reported separately: use redeemableDebtAhead for what is reachable now. Point-in-time, branch-local figure, not a redemption forecast; bounded by maxTroves (default 10000, maximum 100000). Check positionComplete.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "troveId": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Trove NFT ID. Non-negative decimal integer string; never a JSON number."
+          },
+          "maxTroves": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Maximum Troves to scan, default 10000, maximum 100000. Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch",
+          "troveId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_analyze_branch_interest_rates",
+      "group": "read",
+      "sideEffect": "read",
+      "status": "implemented",
+      "requiresRpc": true,
+      "description": "Scan the branch's on-chain sorted Trove list and calculate rate min/max, nearest-rank p10/p25/p50/p75/p90, arithmetic and debt-weighted mean, and a debt/count histogram. Rates use 1e18 = 100%; default histogram width is 1 percentage point. Bounded by maxTroves (default 10000, maximum 100000); check complete before treating statistics as branch-wide.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "branch": {
+            "type": "string",
+            "enum": [
+              "WETH",
+              "wstETH",
+              "rETH"
+            ],
+            "description": "Collateral branch."
+          },
+          "maxTroves": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Maximum Troves to scan, default 10000, maximum 100000. Non-negative decimal integer string; never a JSON number."
+          },
+          "bucketSize": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional histogram bucket width in 1e18-scaled annual-rate units; default 10000000000000000 (1 percentage point). Non-negative decimal integer string; never a JSON number."
+          },
+          "blockNumber": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Optional block number (decimal string) to pin the read to. Defaults to the latest block."
+          }
+        },
+        "required": [
+          "branch"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_calculate_trove_metrics",
+      "group": "calculate",
+      "sideEffect": "compute",
+      "status": "implemented",
+      "requiresRpc": false,
+      "description": "Pure calculation. collateralRatio = collateral*price/debt (1e18 = 100%, rounded down; null if debt is 0). liquidationPrice = debt*mcr/collateral (USD 1e18, rounded up; null if collateral is 0). Inputs are 1e18-scaled integers. Does not read chain state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "collateral": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Collateral amount, 1e18 base units. Non-negative decimal integer string; never a JSON number."
+          },
+          "debt": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Debt in BOLD, 1e18 base units. Non-negative decimal integer string; never a JSON number."
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Collateral price in USD, 1e18. Non-negative decimal integer string; never a JSON number."
+          },
+          "mcr": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Minimum collateral ratio, 1e18 = 100%. Non-negative decimal integer string; never a JSON number."
+          }
+        },
+        "required": [
+          "collateral",
+          "debt",
+          "price",
+          "mcr"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "liquity_estimate_simple_interest",
+      "group": "calculate",
+      "sideEffect": "compute",
+      "status": "implemented",
+      "requiresRpc": false,
+      "description": "Pure calculation. Simple-interest estimate: debt*annualRate*days/(1e18*365), rounded down, in BOLD base units. Excludes compounding, batch management fees, upfront fees and any future debt change. Does not read chain state.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "debt": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Debt in BOLD, 1e18 base units. Non-negative decimal integer string; never a JSON number."
+          },
+          "annualRate": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Annual interest rate, 1e18 = 100%. Non-negative decimal integer string; never a JSON number."
+          },
+          "days": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "description": "Number of days. Non-negative decimal integer string; never a JSON number."
+          }
+        },
+        "required": [
+          "debt",
+          "annualRate",
+          "days"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ]
+}
