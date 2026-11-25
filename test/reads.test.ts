@@ -318,6 +318,22 @@ describe("redemption position and interest-rate analysis", () => {
   });
 });
 
+describe("RPC failure messages", () => {
+  it("surfaces the provider's reason and a range hint without leaking the RPC URL or key", async () => {
+    const w = makeWorld();
+    const client = w.chain.client();
+    (client as unknown as { getLogs: () => Promise<never> }).getLogs = async () => {
+      throw Object.assign(new Error("boom"), { shortMessage: "HTTP request failed.", details: "You can make eth_getLogs requests with up to a 10 block range. See https://eth-mainnet.g.alchemy.com/v2/SECRETKEY123" });
+    };
+    const err = (await getWalletTroves(client, "WETH", OWNER, { fromBlock: 23_000_000n, maxBlockRange: 500_000n }).then(() => null, (e: unknown) => e)) as (Error & { code?: string }) | null;
+    if (!err) throw new Error("expected getWalletTroves to fail");
+    expect(err.code).toBe("RPC_READ_FAILED");
+    expect(err.message).toMatch(/Provider said: HTTP request failed\. - You can make eth_getLogs requests with up to a 10 block range/);
+    expect(err.message).toMatch(/block-range or result-size limit/);
+    expect(err.message).not.toMatch(/SECRETKEY123|alchemy\.com/);
+  });
+});
+
 describe("getWalletTroves", () => {
   const A = 11n, B = 22n, C = 33n;
   function scenario() {

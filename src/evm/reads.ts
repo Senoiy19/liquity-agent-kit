@@ -24,10 +24,21 @@ function priceSourceFromCode(code: number): PriceSource {
   // IMainnetPriceFeed.PriceSource: primary=0, ETHUSDxCanonical=1, lastGoodPrice=2.
   return ([ "primary", "ETHUSDxCanonical", "lastGoodPrice" ] as const)[code] ?? "unknown";
 }
+/** A short, URL-free reason taken from a provider error. RPC URLs usually embed an API key, so they are never echoed. */
+function providerReason(error: unknown): string {
+  const e = error as { shortMessage?: unknown; details?: unknown; message?: unknown } | null | undefined;
+  const parts = [e?.shortMessage, e?.details].filter((x): x is string => typeof x === "string" && x.length > 0);
+  const raw = parts.length ? parts.join(" - ") : typeof e?.message === "string" ? e.message : "";
+  return raw.replace(/https?:\/\/\S+/gi, "<url>").replace(/\s+/g, " ").trim().slice(0, 300);
+}
+const RANGE_LIMIT_HINT = /range|limit|exceed|too many|too large|more than|result size|response size/i;
+
 async function rpc<T>(what: string, run: () => Promise<T>): Promise<T> {
   try { return await run(); } catch (error) {
     if (error instanceof LiquityAgentKitError) throw error;
-    throw new LiquityAgentKitError("RPC_READ_FAILED", `RPC read failed: ${what}.`, error);
+    const reason = providerReason(error);
+    const hint = RANGE_LIMIT_HINT.test(reason) ? " This looks like a block-range or result-size limit on the RPC plan: lower maxBlockRange, start fromBlock closer to when the Trove was opened, or use a provider that allows wide eth_getLogs ranges." : "";
+    throw new LiquityAgentKitError("RPC_READ_FAILED", `RPC read failed: ${what}.${reason ? ` Provider said: ${reason}` : ""}${hint}`, error);
   }
 }
 
