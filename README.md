@@ -68,6 +68,50 @@ npm run mcp                              # without an RPC: calculation and disco
 
 Configure an MCP client to launch that command (stdio) from the project folder. The server exposes only tools whose side effect is `read` or `compute`, marks them read-only, and never prints the RPC URL. Optional live checks: `npm run smoke` and `npm run live:redemption`.
 
+## Quick start: use it from an AI agent (no coding)
+
+You need Node.js 20.11+ and an Ethereum mainnet RPC URL (a free Alchemy or similar key is enough for most tools; see the wallet-scan note under Known issues).
+
+1. Download this repo (Code → Download ZIP), unzip it, open a terminal in the folder and run `npm ci`.
+2. Tell your MCP-capable agent app to launch the server. Use full paths to your own folder.
+
+**Claude Desktop** (Settings → Developer → Edit Config, or edit `claude_desktop_config.json`; restart the app fully afterwards):
+
+```json
+{
+  "mcpServers": {
+    "liquity": {
+      "command": "node",
+      "args": [
+        "/full/path/to/liquity-agent-kit/node_modules/tsx/dist/cli.mjs",
+        "/full/path/to/liquity-agent-kit/src/mcp/stdio.ts"
+      ],
+      "env": { "ETH_RPC_URL": "https://eth-mainnet.g.alchemy.com/v2/<your-key>" }
+    }
+  }
+}
+```
+
+On Windows, write paths with doubled backslashes (`C:\\Users\\you\\liquity-agent-kit\\...`).
+
+**Claude Code:**
+
+```
+claude mcp add liquity -e ETH_RPC_URL=https://eth-mainnet.g.alchemy.com/v2/<your-key> -- node /full/path/to/liquity-agent-kit/node_modules/tsx/dist/cli.mjs /full/path/to/liquity-agent-kit/src/mcp/stdio.ts
+```
+
+Other MCP clients (Cursor, VS Code, Windsurf, and so on) take the same three things: command `node`, the two arguments above, and the `ETH_RPC_URL` environment variable. To try the tools without an agent app, run `npx @modelcontextprotocol/inspector -e ETH_RPC_URL=... node node_modules/tsx/dist/cli.mjs src/mcp/stdio.ts` in the folder.
+
+3. Ask in plain language, for example: *"What is the oracle price on each Liquity branch?"*, *"What is the collateral ratio and liquidation price of WETH Trove 2241…?"*, or *"How much debt is ahead of this Trove in the redemption queue?"*. The agent picks the matching tool; every answer carries its block number and warnings.
+
+Without `ETH_RPC_URL` only the four calculation and discovery tools are offered. The server is local and read-only: it cannot send transactions, and it does not work from a browser chat (claude.ai) because it runs on your machine.
+
+### Real output (Ethereum mainnet, 2026-11-25)
+
+`liquity_get_branch_price` with `branch: "WETH"` returned the protocol oracle price `1652920000000000000000` (= $1,652.92) from the primary source, at block 26489926, with `oracleFailureDetected: false`.
+
+`liquity_get_trove_health` for WETH Trove `2241251786…`, block 26495481: collateral 106.189 ETH, debt 58,856.69 BOLD, collateral ratio 304.18%, liquidation price $609.69, MCR 110%, `isBelowMcr: false`. The ratio and liquidation price match a hand calculation from the oracle price, collateral and debt.
+
 See [the product specification](docs/PRODUCT_SPEC.md), [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md) and [implementation status](docs/IMPLEMENTATION_STATUS.md).
 
 ## Install and check
