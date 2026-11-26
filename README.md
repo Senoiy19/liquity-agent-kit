@@ -57,7 +57,7 @@ A single package for now (`liquity-agent-kit`); the modules below are directorie
 | JSON Schemas + executable tools | Done (`executeTool`, `schemas/capability-catalog.json`) |
 | MCP adapter | Done (`npm run mcp`; see below) |
 | Write planning | Not started |
-| Live mainnet validation | **Partial** — `npm run smoke` and `npm run live:redemption` pass; Trove-health, wallet-Trove and interest-rate tools not yet run live |
+| Live mainnet validation | **Partial** — `npm run smoke`, `npm run live:redemption` and `liquity_get_trove_health` pass live; wallet-Trove scan (needs a wide-`eth_getLogs` RPC) and interest-rate tool not yet verified live |
 
 ### Running the MCP server
 
@@ -137,7 +137,7 @@ All integers cross the tool boundary as decimal strings. Inputs are validated ag
 ## Known limits
 
 - **ABIs are machine-checked against upstream source, not generated from it.** `npm run abi:extract -- <bold checkout>` parses the pinned `liquity/bold` Solidity into a signature fixture, and `test/abi-drift.test.ts` compares every function in the hand-written ABIs (types, tuple layout, mutability) to it. Regenerate the fixture whenever `sourceCommit` changes.
-- **Live validation is partial.** `npm run smoke` and `npm run live:redemption` pass against Ethereum mainnet (see `docs/IMPLEMENTATION_STATUS.md`). Not yet run live: Trove-health and wallet-Trove reads, the interest-rate analysis tool, and any state with a pending zombie Trove or a Trove below 100% ICR (those paths are verified against a mock JSON-RPC node only; the mock uses the same ABIs as the code, so ABI drift is guarded separately by `test/abi-drift.test.ts`, which compares against upstream Solidity at the pinned commit, not the deployed bytecode).
+- **Live validation is partial.** `npm run smoke` and `npm run live:redemption` pass against Ethereum mainnet (see `docs/IMPLEMENTATION_STATUS.md`). Not yet run live: the wallet-Trove log scan (blocked by a Free-tier RPC log-range cap), the interest-rate analysis tool, and any state with a pending zombie Trove or a Trove below 100% ICR (those paths are verified against a mock JSON-RPC node only; the mock uses the same ABIs as the code, so ABI drift is guarded separately by `test/abi-drift.test.ts`, which compares against upstream Solidity at the pinned commit, not the deployed bytecode).
 - **Upstream `main` may be ahead of what is deployed.** The pinned commit is the manifest's source, not a guarantee of the deployed bytecode.
 - **Oracle price is a simulation.** `PriceFeed.fetchPrice` is state-changing upstream; the kit calls it with `eth_call` only. If your RPC provider rejects simulating it, the price tools fail rather than substituting another source.
 - **Sorted Trove pages are bounded.** `liquity_get_sorted_troves_page` reads at most 500 entries per call. It resolves the branch collateral index from the on-chain CollateralRegistry at the same pinned block. The contract-native signed index is returned; consumers should use `nextStartIndex` rather than guessing pagination semantics.
@@ -160,4 +160,4 @@ See `SOURCE_NOTES.md` for provenance.
 
 - `npm audit` reports 3 findings (1 moderate, 2 critical) in the **dev-only** test tooling (`vitest`, `@vitest/mocker`, `tinypool`). They do not ship in the library or the MCP server. The suggested fix is vitest 5, which requires Node 22.12 or newer, so it was not applied here (the kit supports Node 20.11+); an attempt to move to a 4.x release failed in this environment with an npm error and was not pursued further.
 - The redemption-position tools describe the **current branch queue only**. They do not model cross-branch routing, redemption fees or future state changes.
-- `liquity_get_wallet_troves` finds Troves by scanning `eth_getLogs`. Some RPC plans (notably free tiers) cap the block range or result size of a log query, which makes a wide scan fail. Errors now include the provider's reason. Start `fromBlock` close to when the Trove was opened, lower `maxBlockRange` to what your plan allows, or use a provider that permits wide log ranges.
+- `liquity_get_wallet_troves` finds Troves by scanning `eth_getLogs`. Some RPC plans (notably free tiers) cap the block range or result size of a log query, which makes a wide scan fail. Errors now include the provider's reason. Confirmed live: Alchemy's **Free tier allows only 10 blocks per `eth_getLogs` request**, so wallet discovery over a wide range cannot run on that plan (it needs a paid plan or a provider with wider log ranges). Start `fromBlock` close to when the Trove was opened, lower `maxBlockRange` to what your plan allows, or use a provider that permits wide log ranges.

@@ -28,7 +28,8 @@
 - [x] Read Stability Pool state and account deposits.
 - [x] Add deterministic health and simple-interest calculations.
 - [x] Live mainnet validation (`npm run smoke`, `npm run live:redemption`) passes.
-- [ ] **Release gate remainder:** live check of `liquity_get_trove_health` on a real Trove and `liquity_get_wallet_troves` on a real wallet.
+- [x] Live check of `liquity_get_trove_health` on a real Trove (matches hand calculation).
+- [ ] **Release gate remainder:** live check of `liquity_get_wallet_troves` on a real wallet (needs an RPC plan that allows wide `eth_getLogs` ranges).
 - [x] Bounded sorted-Trove pages via `MultiTroveGetter`, with collateral index resolved from the on-chain registry.
 - [ ] Debt-in-front and rate-distribution reads.
 

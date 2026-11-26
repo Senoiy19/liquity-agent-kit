@@ -23,7 +23,7 @@ v0.3.0 as first delivered did not compile: `getWalletTroveDetails` was documente
 
 ## Not verified
 
-- **Live coverage is partial.** Not yet run against a live chain: `liquity_get_trove_health`, `liquity_get_wallet_troves` (log scan), `liquity_analyze_branch_interest_rates`, Stability Pool account deposits, and any state with a **pending zombie Trove** or a **Trove below 100% ICR ahead of the target** (neither existed on any branch when the live checks ran, so those code paths are verified against mocks only).
+- **Live coverage is partial.** Not yet run against a live chain: `liquity_get_trove_health`, `liquity_get_wallet_troves` (log scan; attempted live on 2026-11-26 and rejected by Alchemy's Free tier, which caps `eth_getLogs` at 10 blocks, so its success path has not been verified live), `liquity_analyze_branch_interest_rates`, Stability Pool account deposits, and any state with a **pending zombie Trove** or a **Trove below 100% ICR ahead of the target** (neither existed on any branch when the live checks ran, so those code paths are verified against mocks only).
 - That deployed bytecode matches `main` at the pinned commit (the manifest, not the Solidity, was matched).
 - Behaviour of specific RPC providers (log-range limits, simulating `fetchPrice`).
 - `MultiTroveGetter.getMultipleSortedTroves` has a bounded page reader. Its ABI matches the upstream Solidity at the pinned commit; deployed-bytecode and live-call behaviour still need validation. `HintHelpers` and `ExchangeHelpers` remain registered but have no readers.
@@ -38,7 +38,7 @@ v0.3.0 as first delivered did not compile: `getWalletTroveDetails` was documente
 
 ## Release gate
 
-Do not tag a stable release or call capabilities production-ready until `npm run smoke` passes against a mainnet RPC (**done**), with at least one real Trove checked end-to-end through `liquity_get_trove_health` and one wallet through `liquity_get_wallet_troves` (**not yet done**).
+Do not tag a stable release or call capabilities production-ready until `npm run smoke` passes against a mainnet RPC (**done**), with at least one real Trove checked end-to-end through `liquity_get_trove_health` (**done**, 2026-11-26: ratio and liquidation price matched hand calculation) and one wallet through `liquity_get_wallet_troves` (**not yet done**; needs an RPC plan with wide log ranges).
 
 
 ## v0.3.2 additions
