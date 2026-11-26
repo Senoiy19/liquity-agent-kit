@@ -23,7 +23,7 @@ v0.3.0 as first delivered did not compile: `getWalletTroveDetails` was documente
 
 ## Not verified
 
-- **Live coverage is partial.** Not yet run against a live chain: `liquity_get_trove_health`, `liquity_get_wallet_troves` (log scan; attempted live on 2026-11-26 and rejected by Alchemy's Free tier, which caps `eth_getLogs` at 10 blocks, so its success path has not been verified live), `liquity_analyze_branch_interest_rates`, Stability Pool account deposits, and any state with a **pending zombie Trove** or a **Trove below 100% ICR ahead of the target** (neither existed on any branch when the live checks ran, so those code paths are verified against mocks only).
+- **Live coverage is partial.** Not yet run against a live chain: `liquity_get_trove_health`, `liquity_get_wallet_troves` (log scan; attempted live on 2026-11-26 and rejected by Alchemy's Free tier, which caps `eth_getLogs` at 10 blocks, so its success path has not been verified live), Stability Pool account deposits, and any state with a **pending zombie Trove** or a **Trove below 100% ICR ahead of the target** (neither existed on any branch when the live checks ran, so those code paths are verified against mocks only).
 - That deployed bytecode matches `main` at the pinned commit (the manifest, not the Solidity, was matched).
 - Behaviour of specific RPC providers (log-range limits, simulating `fetchPrice`).
 - `MultiTroveGetter.getMultipleSortedTroves` has a bounded page reader. Its ABI matches the upstream Solidity at the pinned commit; deployed-bytecode and live-call behaviour still need validation. `HintHelpers` and `ExchangeHelpers` remain registered but have no readers.
@@ -64,6 +64,8 @@ Do not tag a stable release or call capabilities production-ready until `npm run
 v0.3.2 walked the list from the head and treated the Troves in front of the target as "ahead" in the redemption queue. Because the list is descending by rate and redemption starts at the tail, those are the Troves redeemed *after* the target, so `debtAhead` was inverted and `lowerRateDebtAhead` would have been zero on real data. Its test passed only because the mock list was ascending. v0.3.3 walks from the tail and the tests use the real descending order.
 
 ### v0.3.5: MCP adapter and live redemption check
+
+- **Agent-client test (2026-11-26):** the MCP server was connected to Claude Desktop and its tools were called by the app. `liquity_analyze_branch_interest_rates` (rETH: 6 Troves, rates 4.5% to 17.223%, bucket debts sum to total, nearest-rank percentiles consistent) and `liquity_get_trove_redemption_position` (WETH rank 2, debt ahead equals the tail Trove's debt plus accrued interest) returned correct results live.
 
 - Added `src/mcp` (`npm run mcp`): a stdio MCP server over the shared tool definitions. It exposes only `read`/`compute` tools, annotates them read-only, lists RPC-needing tools only when `ETH_RPC_URL` is set, and returns validation errors as tool errors with the kit's stable codes. Verified with in-memory client tests and a real stdio round trip; not yet tried in MCP Inspector or an agent client.
 - Added `npm run live:redemption`: queries Troves at several depths from the tail on each branch and cross-checks rank, debt ahead, lower/same-rate split, below-100% debt and redeemable debt against an independent walk of the sorted list at one pinned block. Run against mainnet and passed on all three branches; the pending-zombie and below-100%-ICR branches of the check were not triggered because no branch had either condition at the time.

@@ -57,7 +57,7 @@ A single package for now (`liquity-agent-kit`); the modules below are directorie
 | JSON Schemas + executable tools | Done (`executeTool`, `schemas/capability-catalog.json`) |
 | MCP adapter | Done (`npm run mcp`; see below) |
 | Write planning | Not started |
-| Live mainnet validation | **Partial** — `npm run smoke`, `npm run live:redemption` and `liquity_get_trove_health` pass live; wallet-Trove scan (needs a wide-`eth_getLogs` RPC) and interest-rate tool not yet verified live |
+| Live mainnet validation | **Partial** — `npm run smoke`, `npm run live:redemption` `liquity_get_trove_health`, `liquity_analyze_branch_interest_rates` and `liquity_get_trove_redemption_position` pass live, including calls made by an agent app (Claude Desktop) through the MCP server; wallet-Trove scan (needs a wide-`eth_getLogs` RPC) not yet verified live |
 
 ### Running the MCP server
 
@@ -181,7 +181,7 @@ All integers cross the tool boundary as decimal strings. Inputs are validated ag
 ## Known limits
 
 - **ABIs are machine-checked against upstream source, not generated from it.** `npm run abi:extract -- <bold checkout>` parses the pinned `liquity/bold` Solidity into a signature fixture, and `test/abi-drift.test.ts` compares every function in the hand-written ABIs (types, tuple layout, mutability) to it. Regenerate the fixture whenever `sourceCommit` changes.
-- **Live validation is partial.** `npm run smoke` and `npm run live:redemption` pass against Ethereum mainnet (see `docs/IMPLEMENTATION_STATUS.md`). Not yet run live: the wallet-Trove log scan (blocked by a Free-tier RPC log-range cap), the interest-rate analysis tool, and any state with a pending zombie Trove or a Trove below 100% ICR (those paths are verified against a mock JSON-RPC node only; the mock uses the same ABIs as the code, so ABI drift is guarded separately by `test/abi-drift.test.ts`, which compares against upstream Solidity at the pinned commit, not the deployed bytecode).
+- **Live validation is partial.** `npm run smoke` and `npm run live:redemption` pass against Ethereum mainnet (see `docs/IMPLEMENTATION_STATUS.md`). Not yet run live: the wallet-Trove log scan (blocked by a Free-tier RPC log-range cap), and any state with a pending zombie Trove or a Trove below 100% ICR (those paths are verified against a mock JSON-RPC node only; the mock uses the same ABIs as the code, so ABI drift is guarded separately by `test/abi-drift.test.ts`, which compares against upstream Solidity at the pinned commit, not the deployed bytecode).
 - **Upstream `main` may be ahead of what is deployed.** The pinned commit is the manifest's source, not a guarantee of the deployed bytecode.
 - **Oracle price is a simulation.** `PriceFeed.fetchPrice` is state-changing upstream; the kit calls it with `eth_call` only. If your RPC provider rejects simulating it, the price tools fail rather than substituting another source.
 - **Sorted Trove pages are bounded.** `liquity_get_sorted_troves_page` reads at most 500 entries per call. It resolves the branch collateral index from the on-chain CollateralRegistry at the same pinned block. The contract-native signed index is returned; consumers should use `nextStartIndex` rather than guessing pagination semantics.

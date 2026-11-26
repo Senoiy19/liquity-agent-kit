@@ -38,7 +38,7 @@
 - [x] Publish JSON Schemas and tool descriptions (generated, sync-tested).
 - [x] Add example agent workflows and a framework-neutral tool loop.
 - [x] Add MCP adapter over the shared tool functions (`src/mcp`, `npm run mcp`).
-- [ ] Test with MCP Inspector and at least one agent client (in-process and stdio client tests pass; no real agent client yet).
+- [x] Test with MCP Inspector and at least one agent client (Inspector and Claude Desktop both connected; tools called live on mainnet).
 
 ## Phase 4 — Write planning (not automatic execution)
 
